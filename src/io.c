@@ -6,8 +6,28 @@
  */
 #include <json-c/json.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #include "flow.h"
+
+void
+save_host_csv(const char *saddr, request_t *req){
+
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+
+	if(req->host != NULL){
+		// Dump to file
+		FILE *f = fopen("http.csv", "ab");
+		fprintf(f, "%d", tv.tv_sec);
+		fputs(",", f);
+		fputs(saddr, f);
+		fputs(",", f);
+		fputs(req->host, f);
+		fputs("\n", f);
+		fclose(f);
+	}
+}
 
 /**
  * Dump a flow_t object into a file
@@ -68,6 +88,9 @@ save_flow_json(const flow_t *flow, const char* file){
 			new_http_pair = json_object_new_object();
 			if(http->request_header != NULL){
 				request_t *req = http->request_header;
+
+				save_host_csv(saddr,req);
+
 				new_request = json_object_new_object();
 				json_object_object_add(new_request, "fbt", json_object_new_double(http->req_fb_sec + http->req_fb_usec*0.000001));
 				json_object_object_add(new_request, "lbt", json_object_new_double(http->req_lb_sec + http->req_lb_usec*0.000001));
